@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Đánh Giá & Quản Lý KPI - THPT Trần Phú</title>
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Google Sign-In SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+  <!-- NAVBAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-md">KPI</div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">HỆ THỐNG ĐÁNH GIÁ KPI</h1>
+          <p class="text-xs text-slate-500">Trường THPT Trần Phú - Tỉnh Lào Cai</p>
+        </div>
+      </div>
+
+      <!-- User Panel -->
+      <div id="user-info-bar" class="hidden flex items-center gap-4">
+        <div class="text-right">
+          <div id="user-display-name" class="font-semibold text-sm text-slate-800 leading-none">--</div>
+          <span id="user-role-badge" class="inline-block mt-1 text-[11px] px-2 py-0.5 rounded font-medium bg-indigo-100 text-indigo-700">--</span>
+        </div>
+        <img id="user-avatar" class="w-9 h-9 rounded-full border border-slate-300" src="" alt="avatar">
+        <button onclick="logout()" class="text-xs bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 px-3 py-1.5 rounded-md border border-slate-200 transition">
+          Đăng xuất
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- 1. VIEW: LOGIN SCREEN -->
+    <section id="login-section" class="flex flex-col items-center justify-center py-20">
+      <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 max-w-md w-full text-center">
+        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+          🎓
+        </div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Đăng Nhập Hệ Thống</h2>
+        <p class="text-sm text-slate-500 mb-6">Sử dụng tài khoản Google được cấp để truy cập vào kho nhiệm vụ và bảng theo dõi KPI.</p>
+
+        <!-- Google Official Button Target -->
+        <div class="flex justify-center mb-4">
+          <div id="google-signin-btn"></div>
+        </div>
+
+        <div class="relative flex py-2 items-center">
+          <div class="flex-grow border-t border-slate-200"></div>
+          <span class="flex-shrink mx-4 text-xs text-slate-400">Hoặc mô phỏng nhanh</span>
+          <div class="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <!-- Quick Demo Switcher -->
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <button onclick="simulateLogin('thaian2109@gmail.com', 'Trần Tiến Dũng (Toán)')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-3 rounded-lg text-left">
+            👤 <b>GV Demo</b><br><span class="text-[10px] text-slate-500">Trần Tiến Dũng</span>
+          </button>
+          <button onclick="simulateLogin('bgh@laocai.edu.vn', 'Thầy Hiệu Trưởng')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 py-2 px-3 rounded-lg text-left">
+            👑 <b>BGH Demo</b><br><span class="text-[10px] text-amber-600">Ban Giám Hiệu</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. VIEW: TEACHER DASHBOARD (GV) -->
+    <section id="teacher-section" class="hidden space-y-8">
+      <!-- STATS OVERVIEW CARDS -->
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          📊 Tổng Hợp KPI Của Tôi
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold uppercase text-slate-400">Nhiệm Vụ Đã Đăng Ký</span>
+            <div id="stat-tasks-count" class="text-3xl font-extrabold text-slate-900 mt-2">0</div>
+            <p class="text-xs text-slate-500 mt-1">Ghi nhận từ sheet Data</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold uppercase text-slate-400">Tổng Điểm KPI Đã Chấm</span>
+            <div id="stat-total-score" class="text-3xl font-extrabold text-indigo-600 mt-2">0 <span class="text-sm font-normal text-slate-500">điểm</span></div>
+            <p class="text-xs text-emerald-600 mt-1">Điểm chính thức từ BGH</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold uppercase text-slate-400">Điểm Định Mức Tối Đa</span>
+            <div id="stat-potential-score" class="text-3xl font-extrabold text-amber-600 mt-2">0 <span class="text-sm font-normal text-slate-500">điểm</span></div>
+            <p class="text-xs text-slate-500 mt-1">Dự kiến khi hoàn thành hết</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY REGISTERED TASKS -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+          <h4 class="font-bold text-slate-900">Chi Tiết Nhiệm Vụ & Điểm Số</h4>
+          <span class="text-xs text-slate-400">Dữ liệu đồng bộ trực tiếp</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                <th class="py-3 px-4">Mã việc</th>
+                <th class="py-3 px-4">Tên nhiệm vụ</th>
+                <th class="py-3 px-4 text-center">Định mức</th>
+                <th class="py-3 px-4 text-center">Mức độ hoàn thành</th>
+                <th class="py-3 px-4 text-center">Điểm BGH chấm</th>
+              </tr>
+            </thead>
+            <tbody id="my-tasks-table" class="divide-y divide-slate-100">
+              <!-- Render via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TASK CATALOG (KHO KPI) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+          <h4 class="font-bold text-slate-900">Danh Sách Kho KPI Linh Hoạt (Chờ Đăng Ký)</h4>
+          <p class="text-xs text-slate-500 mt-0.5">Lựa chọn nhiệm vụ phù hợp để đăng ký và đóng góp chuyên môn.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                <th class="py-3 px-4">Mã việc</th>
+                <th class="py-3 px-4">Tên & Mô tả nhiệm vụ</th>
+                <th class="py-3 px-4 text-center">Điểm định mức</th>
+                <th class="py-3 px-4 text-center">Hạn chót</th>
+                <th class="py-3 px-4 text-center">Chỉ tiêu</th>
+                <th class="py-3 px-4 text-center">Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="available-tasks-table" class="divide-y divide-slate-100">
+              <!-- Render via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. VIEW: BGH MANAGEMENT DASHBOARD -->
+    <section id="bgh-section" class="hidden space-y-8">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Bảng Điều Hành Ban Giám Hiệu</h3>
+          <p class="text-xs text-slate-500">Phân công nhiệm vụ mới và đánh giá nghiệm thu KPI giáo viên.</p>
+        </div>
+        <button onclick="openCreateTaskModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2">
+          ➕ Giao Nhiệm Vụ Mới
+        </button>
+      </div>
+
+      <!-- GRADING TABLE -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+          <h4 class="font-bold text-slate-900">Danh Sách Nhiệm Vụ Cần Chấm Điểm (Sheet: data)</h4>
+          <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">Thời gian thực</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                <th class="py-3 px-4">Mã việc</th>
+                <th class="py-3 px-4">Giáo viên thực hiện</th>
+                <th class="py-3 px-4 text-center">Định mức</th>
+                <th class="py-3 px-4">Đánh giá mức độ</th>
+                <th class="py-3 px-4 text-center">Điểm chấm</th>
+                <th class="py-3 px-4 text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="bgh-grading-table" class="divide-y divide-slate-100">
+              <!-- Render via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: GIAO NHIỆM VỤ MỚI -->
+  <div id="task-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-900 mb-4">Thêm Nhiệm Vụ Mới Vào Kho KPI</h3>
+      <form id="new-task-form" onsubmit="handleCreateTask(event)" class="space-y-4 text-sm">
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Mã việc (Ví dụ: A6)</label>
+          <input type="text" id="modal-task-id" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Tên việc</label>
+          <input type="text" id="modal-task-title" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Mô tả công việc</label>
+          <textarea id="modal-task-desc" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">Điểm định mức</label>
+            <input type="number" id="modal-task-score" required min="1" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">Hạn hoàn thành</label>
+            <input type="date" id="modal-task-deadline" required class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-1">Chỉ tiêu (GV)</label>
+            <input type="number" id="modal-task-quota" required min="1" value="1" class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeCreateTaskModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-medium">Hủy</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm">Lưu & Xuất Bản</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // --- CẤU HÌNH API & TÀI KHOẢN ---
+    // Thay đường link Apps Script triển khai từ bước trên vào đây:
+    const SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbzUVAcb-HZppLv1iA-8qLC3pK_zbCPkLSTjqN6rtO9nWnJJMU-led1fQPkuLpqMZsmS/exec";
+    const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // Thay bằng OAuth Client ID của bạn
+
+    // Email chỉ định quyền Ban Giám Hiệu
+    const BGH_EMAILS = ["bgh@laocai.edu.vn", "hieutruong.c3tp@yenbai.edu.vn"];
+
+    // Dữ liệu mẫu khởi tạo theo nội dung trích xuất từ Google Sheet
+    let appData = {
+      staff: [
+        { code: "GV1", name: "Trần Tiến Dũng", email: "thaian2109@gmail.com", subject: "Toán" },
+        { code: "GV2", name: "Phan Bích Hoài", email: "ptthuy.c3tp@yenbai.edu.vn", subject: "Toán" },
+        { code: "GV3", name: "Đặng Thị Vui", email: "hvchinh.c3nlb@yenbai.edu.vn", subject: "Toán" },
+        { code: "GV4", name: "Nguyễn Phương Thảo", email: "npthao@yenbai.edu.vn", subject: "Toán" },
+        { code: "GV5", name: "Khuất Hải Yến", email: "khyen@yenbai.edu.vn", subject: "Toán" },
+        { code: "GV6", name: "Vũ Văn Tấn", email: "vvan.c3tp@yenbai.edu.vn", subject: "Lí" },
+        { code: "GV7", name: "Hoàng Mai Trang", email: "hmtrang.c3tp@yenbai.edu.vn", subject: "Lí" },
+        { code: "GV8", name: "Lê Anh Tuấn", email: "latuan.c3tp@yenbai.edu.vn", subject: "Lí" }
+      ],
+      tasks: [
+        { id: "A1", title: "Hỗ trợ công tác chủ nhiệm", desc: "Hỗ trợ quản lý lớp 10A2 trong 5 ngày", score: 25, deadline: "28/09/2025", quota: 1, status: "Hết việc" },
+        { id: "A2", title: "Hỗ trợ công tác quản lý học sinh", desc: "Quản lý 30 HS lao động tưởng niệm Liệt Sỹ", score: 10, deadline: "01/10/2025", quota: 3, status: "Hết việc" },
+        { id: "A3", title: "Tư vấn tuyển sinh", desc: "Tư vấn tuyển sinh tại trường THCS", score: 20, deadline: "04/03/2026", quota: 5, status: "Còn việc" },
+        { id: "A4", title: "Kiểm tra hồ sơ HS thi tốt nghiệp", desc: "Rà soát thông tin học sinh thi tốt nghiệp 2026", score: 10, deadline: "04/04/2026", quota: 21, status: "Còn việc" },
+        { id: "A5", title: "Tuyển sinh vào lớp 10", desc: "Nhập hồ sơ, hướng dẫn phụ huynh đăng ký dự thi", score: 10, deadline: "05/06/2026", quota: 10, status: "Còn việc" }
+      ],
+      registrations: [
+        { rowIndex: 2, taskId: "A1", teacherCode: "GV1", teacherName: "Trần Tiến Dũng", level: "Tốt", baseScore: 25, finalScore: 25 },
+        { rowIndex: 3, taskId: "A2", teacherCode: "GV1", teacherName: "Trần Tiến Dũng", level: "Đang thực hiện", baseScore: 10, finalScore: null }
+      ]
+    };
+
+    let currentUser = null;
+
+    // --- GOOGLE SIGN-IN INITIALIZATION ---
+    window.onload = function() {
+      if (window.google) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleLoginResponse
+        });
+        google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn"),
+          { theme: "outline", size: "large", width: 280, text: "signin_with" }
+        );
+      }
+      fetchRemoteData();
+    };
+
+    // Giải mã Google JWT Token
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(decodeURIComponent(escape(window.atob(base64))));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function handleGoogleLoginResponse(response) {
+      const payload = parseJwt(response.credential);
+      if (payload) {
+        processUserSession(payload.email, payload.name, payload.picture);
+      }
+    }
+
+    function simulateLogin(email, name) {
+      processUserSession(email, name, "https://api.dicebear.com/7.x/avataaars/svg?seed=" + encodeURIComponent(name));
+    }
+
+    function processUserSession(email, name, avatar) {
+      const lowerEmail = email.toLowerCase();
+      let role = "GV";
+      let staffProfile = appData.staff.find(s => s.email === lowerEmail);
+
+      if (BGH_EMAILS.includes(lowerEmail)) {
+        role = "BGH";
+      } else if (!staffProfile) {
+        // Nếu email chưa có trong danh sách sheet, tự động gán là GV thử nghiệm
+        staffProfile = { code: "GV" + (appData.staff.length + 1), name: name, email: lowerEmail, subject: "Chung" };
+        appData.staff.push(staffProfile);
+      }
+
+      currentUser = {
+        email: lowerEmail,
+        name: staffProfile ? staffProfile.name : name,
+        code: staffProfile ? staffProfile.code : "BGH",
+        role: role,
+        avatar: avatar
+      };
+
+      renderAppView();
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById("user-info-bar").classList.add("hidden");
+      document.getElementById("teacher-section").classList.add("hidden");
+      document.getElementById("bgh-section").classList.add("hidden");
+      document.getElementById("login-section").classList.remove("hidden");
+    }
+
+    // --- ĐỒNG BỘ DỮ LIỆU TỪ SHEET (APPS SCRIPT) ---
+    async function fetchRemoteData() {
+      if (SCRIPT_API_URL.includes("YOUR_DEPLOYED_ID_HERE")) return;
+      try {
+        const res = await fetch(`${SCRIPT_API_URL}?action=getInitialData`);
+        const json = await res.json();
+        if (json.tasks && json.tasks.length) appData.tasks = json.tasks;
+        if (json.staff && json.staff.length) appData.staff = json.staff;
+        if (json.registrations) appData.registrations = json.registrations;
+        if (currentUser) renderAppView();
+      } catch (err) {
+        console.warn("Không kết nối được Apps Script, đang chạy bằng Local Mock Data:", err);
+      }
+    }
+
+    // --- HIỂN THỊ GIAO DIỆN THEO PHÂN QUYỀN ---
+    function renderAppView() {
+      document.getElementById("login-section").classList.add("hidden");
+      document.getElementById("user-info-bar").classList.remove("hidden");
+
+      document.getElementById("user-display-name").innerText = currentUser.name;
+      document.getElementById("user-avatar").src = currentUser.avatar;
+      const roleBadge = document.getElementById("user-role-badge");
+
+      if (currentUser.role === "BGH") {
+        roleBadge.innerText = "Ban Giám Hiệu";
+        roleBadge.className = "inline-block mt-1 text-[11px] px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-800";
+        document.getElementById("bgh-section").classList.remove("hidden");
+        document.getElementById("teacher-section").classList.add("hidden");
+        renderBGHGradingTable();
+      } else {
+        roleBadge.innerText = `Giáo Viên (${currentUser.code})`;
+        roleBadge.className = "inline-block mt-1 text-[11px] px-2 py-0.5 rounded font-medium bg-indigo-100 text-indigo-700";
+        document.getElementById("teacher-section").classList.remove("hidden");
+        document.getElementById("bgh-section").classList.add("hidden");
+        renderTeacherDashboard();
+      }
+    }
+
+    // --- RENDER DÀNH CHO GIÁO VIÊN ---
+    function renderTeacherDashboard() {
+      const myRegs = appData.registrations.filter(r => r.teacherCode === currentUser.code);
+
+      // Thống kê thẻ
+      const totalScore = myRegs.reduce((sum, r) => sum + (r.finalScore !== null ? r.finalScore : 0), 0);
+      const potentialScore = myRegs.reduce((sum, r) => sum + r.baseScore, 0);
+
+      document.getElementById("stat-tasks-count").innerText = myRegs.length;
+      document.getElementById("stat-total-score").innerHTML = `${totalScore} <span class="text-sm font-normal text-slate-500">điểm</span>`;
+      document.getElementById("stat-potential-score").innerHTML = `${potentialScore} <span class="text-sm font-normal text-slate-500">điểm</span>`;
+
+      // Bảng nhiệm vụ cá nhân
+      const myTableBody = document.getElementById("my-tasks-table");
+      myTableBody.innerHTML = "";
+      if (myRegs.length === 0) {
+        myTableBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Bạn chưa đăng ký nhiệm vụ nào.</td></tr>`;
+      } else {
+        myRegs.forEach(r => {
+          const taskInfo = appData.tasks.find(t => t.id === r.taskId) || { title: "Nhiệm vụ " + r.taskId };
+          const scoreBadge = r.finalScore !== null 
+            ? `<span class="font-bold text-emerald-600">${r.finalScore} / ${r.baseScore}</span>`
+            : `<span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">Chờ BGH chấm</span>`;
+
+          myTableBody.innerHTML += `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="py-3 px-4 font-semibold text-indigo-600">${r.taskId}</td>
+              <td class="py-3 px-4 font-medium text-slate-800">${taskInfo.title}</td>
+              <td class="py-3 px-4 text-center">${r.baseScore}</td>
+              <td class="py-3 px-4 text-center">
+                <span class="text-xs px-2.5 py-1 rounded-full font-medium ${r.level === 'Tốt' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}">
+                  ${r.level}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-center">${scoreBadge}</td>
+            </tr>
+          `;
+        });
+      }
+
+      // Bảng kho nhiệm vụ có thể đăng ký
+      const availableTableBody = document.getElementById("available-tasks-table");
+      availableTableBody.innerHTML = "";
+      appData.tasks.forEach(task => {
+        const isRegistered = myRegs.some(r => r.taskId === task.id);
+        const isFull = task.status === "Hết việc";
+
+        let actionBtn = "";
+        if (isRegistered) {
+          actionBtn = `<span class="text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">Đã đăng ký</span>`;
+        } else if (isFull) {
+          actionBtn = `<span class="text-xs text-slate-400 font-medium">Đã đủ chỉ tiêu</span>`;
+        } else {
+          actionBtn = `
+            <button onclick="registerKPI('${task.id}')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3.5 py-1.5 rounded-lg shadow-sm transition">
+              Đăng ký ngay
+            </button>
+          `;
+        }
+
+        availableTableBody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3 px-4 font-bold text-slate-800">${task.id}</td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-900">${task.title}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${task.desc || "Không có mô tả thêm"}</div>
+            </td>
+            <td class="py-3 px-4 text-center font-bold text-indigo-600">${task.score}</td>
+            <td class="py-3 px-4 text-center text-slate-600 text-xs">${task.deadline}</td>
+            <td class="py-3 px-4 text-center text-xs text-slate-500">${task.quota} người</td>
+            <td class="py-3 px-4 text-center">${actionBtn}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- ĐĂNG KÝ KPI (CẬP NHẬT SHEET DATA) ---
+    async function registerKPI(taskId) {
+      const task = appData.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const newRegistration = {
+        rowIndex: appData.registrations.length + 2, // Row ảo nếu chạy local
+        taskId: task.id,
+        teacherCode: currentUser.code,
+        teacherName: currentUser.name,
+        level: "Đang thực hiện",
+        baseScore: task.score,
+        finalScore: null
+      };
+
+      appData.registrations.push(newRegistration);
+      renderTeacherDashboard();
+
+      // Gửi Post lên Sheet API
+      if (!SCRIPT_API_URL.includes("YOUR_DEPLOYED_ID_HERE")) {
+        try {
+          await fetch(SCRIPT_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "registerKPI",
+              taskId: task.id,
+              teacherCode: currentUser.code,
+              teacherName: currentUser.name,
+              score: task.score
+            })
+          });
+        } catch (e) {
+          console.error("Gửi dữ liệu đăng ký thất bại:", e);
+        }
+      }
+      alert(`Đăng ký thành công nhiệm vụ [${task.id}]! Dữ liệu đã được chuyển vào Sheet.`);
+    }
+
+    // --- RENDER DÀNH CHO BAN GIÁM HIỆU ---
+    function renderBGHGradingTable() {
+      const tbody = document.getElementById("bgh-grading-table");
+      tbody.innerHTML = "";
+
+      if (appData.registrations.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">Chưa có giáo viên nào đăng ký nhiệm vụ.</td></tr>`;
+        return;
+      }
+
+      appData.registrations.forEach((reg, index) => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition" id="bgh-row-${index}">
+            <td class="py-3 px-4 font-bold text-slate-900">${reg.taskId}</td>
+            <td class="py-3 px-4">
+              <span class="font-semibold text-slate-800">${reg.teacherName}</span>
+              <span class="text-xs text-slate-400 ml-1">(${reg.teacherCode})</span>
+            </td>
+            <td class="py-3 px-4 text-center font-medium">${reg.baseScore}</td>
+            <td class="py-3 px-4">
+              <select id="grade-level-${index}" class="text-xs border border-slate-300 rounded px-2 py-1.5 bg-white">
+                <option value="Tốt" ${reg.level === 'Tốt' ? 'selected' : ''}>Tốt</option>
+                <option value="Hoàn thành" ${reg.level === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                <option value="Chưa đạt" ${reg.level === 'Chưa đạt' ? 'selected' : ''}>Chưa đạt</option>
+                <option value="Đang thực hiện" ${reg.level === 'Đang thực hiện' ? 'selected' : ''}>Đang thực hiện</option>
+              </select>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <input type="number" id="grade-score-${index}" value="${reg.finalScore !== null ? reg.finalScore : ''}" placeholder="${reg.baseScore}" max="${reg.baseScore}" min="0" class="w-16 border border-slate-300 rounded px-2 py-1 text-center text-sm font-bold text-indigo-600">
+            </td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="submitGrading(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded shadow-sm">
+                Lưu điểm
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- BGH CHẤM ĐIỂM ---
+    async function submitGrading(index) {
+      const reg = appData.registrations[index];
+      const level = document.getElementById(`grade-level-${index}`).value;
+      const score = Number(document.getElementById(`grade-score-${index}`).value);
+
+      reg.level = level;
+      reg.finalScore = score;
+
+      if (!SCRIPT_API_URL.includes("YOUR_DEPLOYED_ID_HERE")) {
+        try {
+          await fetch(SCRIPT_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "gradeKPI",
+              rowIndex: reg.rowIndex,
+              level: level,
+              finalScore: score
+            })
+          });
+        } catch (e) {
+          console.error("Lỗi cập nhật chấm điểm:", e);
+        }
+      }
+      alert(`Đã chấm điểm thành công cho ${reg.teacherName}: ${score} điểm!`);
+    }
+
+    // --- BGH GIAO NHIỆM VỤ MỚI ---
+    function openCreateTaskModal() { document.getElementById("task-modal").classList.remove("hidden"); }
+    function closeCreateTaskModal() { document.getElementById("task-modal").classList.add("hidden"); }
+
+    async function handleCreateTask(e) {
+      e.preventDefault();
+      const newTask = {
+        id: document.getElementById("modal-task-id").value.trim(),
+        title: document.getElementById("modal-task-title").value.trim(),
+        desc: document.getElementById("modal-task-desc").value.trim(),
+        score: Number(document.getElementById("modal-task-score").value),
+        deadline: document.getElementById("modal-task-deadline").value,
+        quota: Number(document.getElementById("modal-task-quota").value),
+        status: "Còn việc"
+      };
+
+      appData.tasks.push(newTask);
+
+      if (!SCRIPT_API_URL.includes("YOUR_DEPLOYED_ID_HERE")) {
+        try {
+          await fetch(SCRIPT_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "createTask",
+              taskId: newTask.id,
+              title: newTask.title,
+              desc: newTask.desc,
+              score: newTask.score,
+              deadline: newTask.deadline,
+              quota: newTask.quota
+            })
+          });
+        } catch (err) {
+          console.error("Lỗi lưu nhiệm vụ:", err);
+        }
+      }
+
+      closeCreateTaskModal();
+      document.getElementById("new-task-form").reset();
+      alert(`Đã xuất bản nhiệm vụ ${newTask.id} vào Kho KPI!`);
+    }
+  </script>
+</body>
+</html>
